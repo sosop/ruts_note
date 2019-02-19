@@ -6,6 +6,8 @@
 
 [基本概念](#基本概念)
 
+[理解所有权](#理解所有权)
+
 ## 工具
 
 ### cargo: 编译工具及包管理工具
@@ -333,4 +335,111 @@ for number in (1..4).rev() {
     println!("{}!", number);
 }
 ```
+
+
+
+## 理解所有权
+
+**所有权几乎是Rust的唯一特性，它能够不用垃圾回收来保证内存安全**
+
+
+
+### 什么是所有权
+
+Rust通过一组系统所有权的规则在编译时检查来管理内存，这并不会拖慢程序运行
+
+
+
+#### 所有权规则
+
+- 所有值在rust中都有一个被称为所有者的变量
+- 同一时间只能有一个所有者
+- 当所有者超出当前范围，只将被丢弃
+
+
+
+#### 变量范围
+
+##### string type
+
+```rust
+let s = String::from("test");
+let mut ms = String::from("ok");
+ms.push_str("a");
+
+```
+
+#### 内存与分配
+
+就像上面支持可变、扩容的字符串类型，需要在堆上分配一大块内存
+
+- 运行时操作系统需要分配内存 （程序员操作）
+- 当使用完后需要一个方法将此内存返还操作系统 （当变量超出了自身范围就立即调用drop方法进行回收）
+
+
+
+```rust
+// 浅拷贝
+let s1 = String::from("hello");
+let s2 = s1;
+
+println!("{}, world!", s1); // 异常，s1把不再验证
+
+// 深拷贝
+let s1 = String::from("hello");
+let s2 = s1.clone();
+
+println!("s1 = {}, s2 = {}", s1, s2);
+
+// 编译时确定数据大小，只存于栈中
+let x = 5;
+let y = x;
+
+println!("x = {}, y = {}", x, y);
+```
+
+### 引用与借用
+
+```rust
+fn main() {
+    let s1 = String::from("hello");
+
+    let len = calculate_length(&s1);
+
+    println!("The length of '{}' is {}.", s1, len);
+}
+
+fn calculate_length(s: &String) -> usize {
+    s.len()
+}
+// 借用的引用不可变
+```
+
+#### 可变的引用
+
+```rust
+fn main() {
+    let mut s = String::from("hello");
+
+    change(&mut s);
+}
+
+fn change(some_string: &mut String) {
+    some_string.push_str(", world");
+}
+```
+
+**有一个重要的限制：只能有一个可变变量在指定域引用到指定数据块**
+
+这个限制的好处是禁止在编译时数据竞争，数据竞争出现在以下三种情形：
+
+- 同一时间2个或多个指针访问统一数据
+- 至少有一个指针会去对数据做写操作
+- 访问数据时没有使用同步机制
+
+
+
+### Slice
+
+
 
